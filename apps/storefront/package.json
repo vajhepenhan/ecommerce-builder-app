@@ -12,9 +12,11 @@
   },
   "dependencies": {
     "@repo/ui": "workspace:*",
+    "@repo/templates": "workspace:*",
     "next": "^16.0.7",
     "react": "^19.2.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "sanitize-html": "^2.17.0"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^15.4.6",
@@ -25,6 +27,7 @@
     "@types/node": "^22.15.30",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
+    "@types/sanitize-html": "^2.16.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.39.1",
     "postcss": "^8.5.3",

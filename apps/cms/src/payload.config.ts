@@ -1,4 +1,3 @@
-// storage-adapter-import-placeholder
 import { sqliteAdapter } from '@payloadcms/db-sqlite'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
@@ -31,7 +30,5 @@ export default buildConfig({
     },
   }),
   sharp,
-  plugins: [
-    // storage-adapter-placeholder
-  ],
+  plugins: [],
 })

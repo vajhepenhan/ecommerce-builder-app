@@ -1,58 +1,384 @@
-# Turborepo Tailwind CSS starter
+# 🎯 **README.md — Multitenant SaaS Commerce Platform**
 
-This Turborepo starter is maintained by the Turborepo core team.
+# Multitenant Commerce Platform
 
-## Using this example
+**Next.js 15 + PayloadCMS + Puck + Redis/KV + Workers + PNPM Monorepo**
 
-Run the following command:
+This repository contains a **fully modular multi‑tenant SaaS storefront engine**, powered by a visual page builder (Puck), template snapshots, a dynamic runtime storefront, a CMS backend, and background workers for caching and CDN tasks.
 
-```sh
-npx create-turbo@latest -e with-tailwind
+The entire architecture is optimized for:
+
+* **Multi‑tenant SSR at scale**
+    
+* **Runtime template merging**
+    
+* **Lazy component loading**
+    
+* **Canonical versioned templates**
+    
+* **Fast cold starts**
+    
+* **Automatic template compilation + caching**
+    
+* **Full CI/CD automation with GitHub Actions**
+    
+
+* * *
+
+# 🧱 Architecture Overview
+
+```
+                 ┌───────────────────────────┐
+                 │        Payload CMS        │
+                 │  Tenant onboarding        │
+                 │  Snapshot loader          │
+                 │  Template transformer     │
+                 │  Page/Product storage     │
+                 └───────────────┬───────────┘
+                                 │
+                    Seeded tenant data (Pages, Products)
+                                 │
+         ┌───────────────────────▼────────────────────────┐
+         │                Background Worker                │
+         │ Warm template cache (Redis/KV)                 │
+         │ Product cache regeneration                     │
+         │ CDN purge                                       │
+         └───────────────────────┬────────────────────────┘
+                                 │
+                   Cached template/page content
+                                 │
+              ┌──────────────────▼──────────────────┐
+              │            Storefront (Next.js)      │
+              │ Multi‑tenant runtime (SSR)           │
+              │ Lazy-loaded components               │
+              │ Puck snapshot renderer               │
+              └──────────────────────────────────────┘
 ```
 
-## What's inside?
+* * *
 
-This Turborepo includes the following packages/apps:
+# 📦 Monorepo Structure
 
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app with [Tailwind CSS](https://tailwindcss.com/)
-- `web`: another [Next.js](https://nextjs.org/) app with [Tailwind CSS](https://tailwindcss.com/)
-- `ui`: a stub React component library with [Tailwind CSS](https://tailwindcss.com/) shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Building packages/ui
-
-This example is set up to produce compiled styles for `ui` components into the `dist` directory. The component `.tsx` files are consumed by the Next.js apps directly using `transpilePackages` in `next.config.ts`. This was chosen for several reasons:
-
-- Make sharing one `tailwind.config.ts` to apps and packages as easy as possible.
-- Make package compilation simple by only depending on the Next.js Compiler and `tailwindcss`.
-- Ensure Tailwind classes do not overwrite each other. The `ui` package uses a `ui-` prefix for it's classes.
-- Maintain clear package export boundaries.
-
-Another option is to consume `packages/ui` directly from source without building. If using this option, you will need to update the `tailwind.config.ts` in your apps to be aware of your package locations, so it can find all usages of the `tailwindcss` class names for CSS compilation.
-
-For example, in [tailwind.config.ts](packages/tailwind-config/tailwind.config.ts):
-
-```js
-  content: [
-    // app content
-    `src/**/*.{js,ts,jsx,tsx}`,
-    // include packages if not transpiling
-    "../../packages/ui/*.{js,ts,jsx,tsx}",
-  ],
+```
+/
+├── apps/
+│   ├── cms/                  # PayloadCMS app (admin + onboarding)
+│   ├── storefront/           # Next.js 15 storefront runtime
+│   └── worker/               # Background worker (cache + CDN)
+│
+├── packages/
+│   ├── ui-components/        # Shared UI components with lazy & eager maps
+│   ├── template-snapshots/   # Static versioned master template snapshots
+│   └── shared-utils/         # Optional shared utility helpers
+│
+├── infra/
+│   ├── github-actions/       # Deployment workflows (CMS, Storefront, Worker)
+│   ├── docker/               # Docker build configs
+│   └── cdn/                  # CDN setup & docs
+│
+├── pnpm-workspace.yaml
+└── package.json
 ```
 
-If you choose this strategy, you can remove the `tailwindcss` and `autoprefixer` dependencies from the `ui` package.
+* * *
 
-### Utilities
+# 🎨 Shared UI Components (packages/ui-components)
 
-This Turborepo has some additional tools already setup for you:
+All storefront + CMS preview UI lives in the **shared package**.
 
-- [Tailwind CSS](https://tailwindcss.com/) for styles
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+## Lazy Component Map (Storefront runtime)
+
+```ts
+export const lazyComponentMap = {
+  Hero: () => import("./Hero"),
+  ProductGrid: () => import("./ProductGrid"),
+  Section: () => import("./Section"),
+  Callout: () => import("./Callout"),
+  Footer: () => import("./Footer"),
+  Page: () => import("./Page"),
+};
+```
+
+✔ Loads only needed components  
+✔ Fast SSR + small bundle  
+✔ Perfect for serverless / edge
+
+## Eager Component Map (Puck Editor in CMS)
+
+```ts
+import Hero from "./Hero";
+import ProductGrid from "./ProductGrid";
+
+export const eagerComponentMap = {
+  Hero,
+  ProductGrid,
+  Section,
+  Callout,
+  Footer,
+  Page,
+};
+```
+
+✔ Instant preview  
+✔ Zero flicker  
+✔ Works inside Payload Admin UI
+
+* * *
+
+# 📄 Static Template Snapshots
+
+Located in:
+
+```
+/packages/template-snapshots/
+```
+
+These files are the **canonical template definitions** used for:
+
+* Tenant onboarding
+    
+* Worker warmup
+    
+* Storefront runtime
+    
+* Versioned template development
+    
+
+Example:
+
+```
+modern.json
+minimal.json
+fashion.json
+electronics.json
+```
+
+* * *
+
+# 🔁 Template Snapshot Lifecycle
+
+All templates follow this strict process:
+
+```mermaid
+graph TD
+A[Static Template Snapshot <br> packages/template-snapshots/*.json] 
+  --> B[normalizeSnapshot <br>strip heavy fields]
+B --> C[compileSnapshot <br>store under compiled/ + cache]
+C --> D[Worker Warmup <br>Redis/KV global cache]
+D --> E[CMS Onboarding <br>transform → seed Payload]
+E --> F[Storefront <br>loadTenantPage]
+F --> G[Puck SSR <br>lazy component rendering]
+```
+
+This ensures:
+
+* Consistent templates
+    
+* Fast runtime
+    
+* Zero duplication
+    
+* Deterministic builds
+    
+
+* * *
+
+# 🏗 CMS App (PayloadCMS)
+
+Responsibilities:
+
+* **Tenant onboarding**
+    
+* **Template selection**
+    
+* **Template snapshot loading**
+    
+* **Transforming compiled snapshots → Payload docs**
+    
+* **Seeding tenant pages, products, settings**
+    
+* **Admin UI**
+    
+* **Puck Editor (using eager components)**
+    
+
+Key Features:
+
+* `/endpoints/onboarding/createTenant.ts`
+    
+* `/endpoints/templates/snapshot.ts`
+    
+* `/utils/normalizeSnapshot.ts`
+    
+* `/utils/transformCompiledToPayload.ts`
+    
+* `/utils/seedTenantFromTemplate.ts`
+    
+
+* * *
+
+# 🌐 Storefront App (Next.js 15)
+
+Responsibilities:
+
+* Multi-tenant runtime (detect domain → load tenant)
+    
+* SSR Puck snapshot renderer
+    
+* `loadTenantPage()` resolver
+    
+* Lazy component loading via `lazyComponentMap`
+    
+* Template merging:
+    
+    * Template snapshot
+        
+    * Tenant overrides
+        
+    * Dynamic data (products)
+        
+* Multi-layer caching:
+    
+    * Memory LRU
+        
+    * Redis/KV
+        
+    * Next.js ISR
+        
+
+Key Files:
+
+```
+/storefront/src/
+  lib/tenant/loadTenantPage.ts
+  lib/templates/load-template-snapshot.ts
+  lib/puck/PuckRenderer.server.tsx
+  lib/puck/safeDeserialize.ts
+  lib/puck/mergeEngine.ts
+  app/[...slug]/page.tsx
+```
+
+* * *
+
+# ⚙️ Worker App
+
+Responsibilities:
+
+* Warm template caches (Redis/KV)
+    
+* Compile templates (normalize → compress → store)
+    
+* Regenerate product caches
+    
+* Purge CDN
+    
+* Revalidate storefront pages
+    
+
+Key Files:
+
+```
+worker/
+  tasks/template-snapshot-cache.ts
+  tasks/product-cache.ts
+  tasks/cdn-purge.ts
+  clients/redis.ts
+  clients/payload.ts
+  clients/cdn.ts
+```
+
+* * *
+
+# 🔧 Development
+
+### Install dependencies
+
+```bash
+pnpm install
+```
+
+### Run all apps
+
+```bash
+pnpm dev
+```
+
+### Build all apps + packages
+
+```bash
+pnpm build
+```
+
+* * *
+
+# 🚀 Deployment (GitHub Actions)
+
+Found under:
+
+```
+/infra/github-actions/
+```
+
+Includes:
+
+* `deploy-cms.yml`
+    
+* `deploy-storefront.yml`
+    
+* `deploy-worker.yml`
+    
+
+* * *
+
+# 🧪 Testing
+
+### Unit Tests (Vitest)
+
+* Snapshot loader
+    
+* Transformer
+    
+* Tenant loader
+    
+* Merge engine
+    
+
+### Integration Tests (MSW)
+
+* Full tenant page resolution
+    
+* Mocked Payload
+    
+* Mocked Redis
+    
+* Worker warmup flow
+    
+
+* * *
+
+# 🎯 Summary
+
+This repository is a **complete multi‑tenant commerce engine** built with:
+
+* Next.js 15
+    
+* PayloadCMS
+    
+* Puck Editor
+    
+* Redis/KV caching
+    
+* Background workers
+    
+* Shared UI component package
+    
+* Versioned template snapshots
+    
+* Fully automated deployments
+    
+* Multi-layer rendering pipeline
+    
+* pnpm monorepo architecture
+    
+
+It is optimized for performance, scalability, maintainability, and template-driven tenant deployment.
