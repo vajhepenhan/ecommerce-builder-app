@@ -4,10 +4,11 @@
   "rsc": true,
   "tsx": true,
   "tailwind": {
-    "config": "",
-    "css": "@repo/ui/styles/globals.css",
     "baseColor": "neutral",
-    "cssVariables": true
+    "config": "",
+    "css": "src/styles/globals.css",
+    "cssVariables": true,
+    "prefix": ""
   },
   "iconLibrary": "lucide",
   "aliases": {

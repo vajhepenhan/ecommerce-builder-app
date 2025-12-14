@@ -1,5 +1,5 @@
 import { Config } from '@measured/puck'
-import { PuckProps } from './puck-types'
+import { PuckProps } from '../puck-types'
 
 // Import blocks (complex sections/layouts)
 import {
@@ -12,7 +12,7 @@ import {
   FeatureCard,
   NewsletterSection,
   FooterSection,
-} from '@repo/ui/blocks'
+} from '@/blocks'
 
 // Import components (simple reusable elements)
 import { TextBlock } from '@repo/ui/components/TextBlock'

@@ -5,7 +5,10 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "paths": {
-      "@repo/ui/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@repo/*": ["../*"],
+			"@repo/ui/*": ["./src/*"]
+
     }
   },
   "include": ["src", "../templates/default/puck-config.tsx", "../templates/default/puck-types.ts"],
